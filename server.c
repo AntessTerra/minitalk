@@ -6,7 +6,7 @@
 /*   By: jbartosi <jbartosi@student.42prague.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 10:37:07 by jbartosi          #+#    #+#             */
-/*   Updated: 2023/02/22 16:21:39 by jbartosi         ###   ########.fr       */
+/*   Updated: 2023/02/25 13:51:04 by jbartosi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,42 +14,42 @@
 
 static void	print_str(int sig, siginfo_t *info, void *something)
 {
-	static int	pid;
+	static int				pid;
+	static int				i;
+	static unsigned char	c;
 
 	(void)something;
-	pid = info->si_pid;
-	*g_box.c |= (sig == SIGUSR1);
-	if (++*g_box.i == 8)
+	if (!pid)
+		pid = info->si_pid;
+	c |= (sig == SIGUSR1);
+	if (++i == 8)
 	{
-		*g_box.i = 0;
-		ft_printf("%c", *g_box.c);
-		if (!*g_box.c)
+		i = 0;
+		if (!c)
 		{
-			kill(pid, SIGUSR1);
+			kill(pid, SIGUSR2);
+			pid = 0;
 			return ;
 		}
-		*g_box.c = 0;
+		ft_printf("%c", c);
+		c = 0;
 	}
 	else
-		*g_box.c <<= 1;
+		c <<= 1;
+	kill(pid, SIGUSR1);
 }
 
 int	main(void)
 {
 	struct sigaction	sa;
-	unsigned char		c;
-	int					i;
 
-	i = 0;
-	c = 0;
-	g_box.c = &c;
-	g_box.i = &i;
 	ft_printf("Server PID: %d\n", getpid());
 	sa.sa_sigaction = print_str;
 	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
 	while (1)
-		sleep(1);
+		pause();
 	return (0);
 }
